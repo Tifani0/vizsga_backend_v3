@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  PROVIDER
+  CUSTOMER
+  ADMIN
+}
+
+enum Profession {
+  Kozmetikus
+  Fodrász
+  Műkörmös
+}
+
+enum AppointmentStatus {
+  confirmed
+  cancelled
+  completed
+}
+
+model User {
+  id          Int         @id @default(autoincrement())
+  name        String
+  email       String      @unique
+  password    String
+  phonenumber String
+  role        Role        @default(CUSTOMER)
+  profession  Profession?
+  services    Service[]
+  appointments     Appointment[]    @relation("CustomerAppointments")
+  providerSlots    AvailableSlot[]
+  providerAppointments Appointment[] @relation("ProviderAppointments")
+}
+
+model Service {
+  id          Int     @id @default(autoincrement())
+  name        String
+  description String
+  duration    Int
+  price       Int
+  userId      Int
+  user        User    @relation(fields: [userId], references: [id])
+  appointments Appointment[]
+}
+
+model AvailableSlot {
+  id           Int      @id @default(autoincrement())
+  providerId   Int
+  provider     User     @relation(fields: [providerId], references: [id])
+  date         String
+  time         String
+  createdAt    DateTime @default(now())
+
+  @@unique([providerId, date, time])
+}
+
+model Appointment {
+  id               Int               @id @default(autoincrement())
+  customerId       Int
+  customer         User              @relation("CustomerAppointments", fields: [customerId], references: [id])
+  providerId       Int
+  provider         User              @relation("ProviderAppointments", fields: [providerId], references: [id])
+  serviceId        Int
+  service          Service           @relation(fields: [serviceId], references: [id])
+  date             String
+  time             String
+  note             String?
+  status           AppointmentStatus @default(confirmed)
+  createdAt        DateTime          @default(now())
+}
