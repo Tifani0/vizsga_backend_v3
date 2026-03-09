@@ -2,18 +2,25 @@ const { PrismaClient, Role, Profession } = require("@prisma/client");
 const prisma = new PrismaClient();
 const express = require("express");
 const app = express();
+const cors = require("cors");
 
 // ─── CORS – kézi header beállítás, minden metódusra ─────────────────────────
-app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173");
-  res.setHeader("Access-Control-Allow-Credentials", "true");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  if (req.method === "OPTIONS") {
-    return res.sendStatus(204);
-  }
-  next();
-});
+// app.use((req, res, next) => {
+//   res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173");
+//   res.setHeader("Access-Control-Allow-Credentials", "true");
+//   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS");
+//   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+//   if (req.method === "OPTIONS") {
+//     return res.sendStatus(204);
+//   }
+//   next();
+// });
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    credentials: true,
+  }),
+);
 
 app.use(express.json());
 
@@ -118,7 +125,7 @@ app.post("/services", async (req, res) => {
   }
 });
 
-app.patch("/services/:id", async (req, res) => {
+app.put("/services/:id", async (req, res) => {
   try {
     const { name, description, duration, price } = req.body;
     const data = {};
@@ -236,9 +243,11 @@ app.post("/appointments", async (req, res) => {
   }
 });
 
-app.patch("/appointments/:id", async (req, res) => {
+app.put("/appointments/:id", async (req, res) => {
   try {
     const { status, note } = req.body;
+    console.log(status);
+    
     const data = {};
     if (status) data.status = status;
     if (note !== undefined) data.note = note;
