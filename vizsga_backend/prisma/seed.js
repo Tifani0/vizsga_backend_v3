@@ -1,15 +1,20 @@
 const { PrismaClient, Role, Profession } = require('@prisma/client')
 const prisma = new PrismaClient()
+const bcrypt = require('bcrypt')
 
 async function main() {
+  const adminpass = await bcrypt.hash("Admin1234!", 10)
+  const pass1 = await bcrypt.hash("Passw123", 10)
+const pass2 = await bcrypt.hash("Passw1234", 10)
+const pass3 = await bcrypt.hash("Passw12345", 10)
   // Admin felhasználó
   const admin = await prisma.user.upsert({
     where: { email: "admin@bookbeauty.hu" },
-    update: {},
+    update: {password: adminpass},
     create: {
       name: "Admin",
       email: "admin@bookbeauty.hu",
-      password: "Admin1234!",
+      password: adminpass,
       phonenumber: "06701234000",
       role: Role.ADMIN,
     }
@@ -17,11 +22,11 @@ async function main() {
 
   const u1 = await prisma.user.upsert({
     where: { email: "nagy.annamari@gmail.com" },
-    update: {},
+    update: { password: pass1 },
     create: {
       name: "Nagy Annamária",
       email: "nagy.annamari@gmail.com",
-      password: "Passw123",
+      password: pass1,
       phonenumber: "06301234567",
       role: Role.PROVIDER,
       profession: Profession.Műkörmös,
@@ -30,12 +35,12 @@ async function main() {
 
   const u2 = await prisma.user.upsert({
     where: { email: "kiss.berni@gmail.com" },
-    update: {},
+    update: { password: pass2 },
     create: {
       name: "Kiss Bernadett",
       email: "kiss.berni@gmail.com",
       phonenumber: "06301234568",
-      password: "Passw1234",
+      password: pass2,
       role: Role.PROVIDER,
       profession: Profession.Kozmetikus,
     }
@@ -43,27 +48,14 @@ async function main() {
 
   const u3 = await prisma.user.upsert({
     where: { email: "feher.zoltan@gmail.com" },
-    update: {},
+    update: { password: pass3 },
     create: {
       name: "Fehér Zoltán",
       email: "feher.zoltan@gmail.com",
       phonenumber: "06301234569",
-      password: "Passw12345",
+      password: pass3,
       role: Role.PROVIDER,
       profession: Profession.Fodrász,
-    }
-  })
-
-  // Teszt ügyfél
-  await prisma.user.upsert({
-    where: { email: "test@gmail.com" },
-    update: {},
-    create: {
-      name: "Teszt Felhasználó",
-      email: "test@gmail.com",
-      password: "Password1",
-      phonenumber: "06309999999",
-      role: Role.CUSTOMER,
     }
   })
 

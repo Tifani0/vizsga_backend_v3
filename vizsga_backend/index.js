@@ -4,24 +4,15 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 
-// ─── CORS – kézi header beállítás, minden metódusra ─────────────────────────
-// app.use((req, res, next) => {
-//   res.setHeader("Access-Control-Allow-Origin", "http://localhost:5173");
-//   res.setHeader("Access-Control-Allow-Credentials", "true");
-//   res.setHeader("Access-Control-Allow-Methods", "GET, POST, PATCH, PUT, DELETE, OPTIONS");
-//   res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-//   if (req.method === "OPTIONS") {
-//     return res.sendStatus(204);
-//   }
-//   next();
-// });
+
 app.use(
   cors({
     origin: "http://localhost:5173",
     credentials: true,
   }),
 );
-
+const bcrypt = require("bcrypt");
+const SALT_ROUNDS = 10;
 app.use(express.json());
 
 // ─── Titkos kód a szolgáltatói regisztrációhoz ───────────────────────────────
@@ -38,7 +29,20 @@ app.get("/users/:id", async (req, res) => {
   const user = await prisma.user.findUnique({ where: { id: Number(req.params.id) } });
   res.json(user);
 });
-
+app.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await prisma.user.findFirst({ where: { email } });
+    if (!user) return res.status(401).json({ error: "Hibás email vagy jelszó" });
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) return res.status(401).json({ error: "Hibás email vagy jelszó" });
+    const token = `token-${user.id}-${Date.now()}`;
+    const { password: _, ...userWithoutPassword } = user;
+    res.json({ user: userWithoutPassword, token });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 app.post("/users", async (req, res) => {
   try {
     const { name, email, phonenumber, password, role, profession, providerCode } = req.body;
@@ -52,9 +56,10 @@ app.post("/users", async (req, res) => {
     }
     const existing = await prisma.user.findFirst({ where: { email } });
     if (existing) return res.status(409).json({ error: "Ez az email cím már használatban van!" });
-    const user = await prisma.user.create({
-      data: { name, email, phonenumber, password, role: assignedRole, profession: assignedProfession },
-    });
+    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+const user = await prisma.user.create({
+  data: { name, email, phonenumber, password: hashedPassword, role: assignedRole, profession: assignedProfession },
+});
     const { password: _, ...userWithoutPassword } = user;
     res.json(userWithoutPassword);
   } catch (e) {
