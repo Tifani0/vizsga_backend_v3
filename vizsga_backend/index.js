@@ -25,6 +25,19 @@ app.get("/users", async (req, res) => {
   res.json(users);
 });
 
+app.post("/users/reset-password", async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+    const user = await prisma.user.findFirst({ where: { email } });
+    if (!user) return res.status(404).json({ error: "Felhasználó nem található!" });
+    const hashedPassword = await bcrypt.hash(newPassword, SALT_ROUNDS);
+    await prisma.user.update({ where: { id: user.id }, data: { password: hashedPassword } });
+    res.json({ success: true });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.get("/users/:id", async (req, res) => {
   const user = await prisma.user.findUnique({ where: { id: Number(req.params.id) } });
   res.json(user);
